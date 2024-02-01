@@ -9,7 +9,7 @@
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
     <RootNamespace>ResoniteLNLTweaks</RootNamespace>
-    <LangVersion>9.0</LangVersion>
+    <LangVersion>10.0</LangVersion>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   	<ResonitePath>$(MSBuildThisFileDirectory)Resonite</ResonitePath>
 		<ResonitePath Condition="Exists('C:\Program Files (x86)\Steam\steamapps\common\Resonite\')">C:\Program Files (x86)\Steam\steamapps\common\Resonite\</ResonitePath>

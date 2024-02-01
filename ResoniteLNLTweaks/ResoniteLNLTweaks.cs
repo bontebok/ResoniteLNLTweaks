@@ -1,14 +1,10 @@
 ﻿using HarmonyLib;
 using ResoniteModLoader;
-using FrooxEngine;
-using Elements.Core;
-using SkyFrost.Base;
 using System;
 using System.Net;
-using System.Net.Sockets;
-using System.Threading.Tasks;
 using LiteNetLib;
 using System.Reflection;
+using System.Reflection.Emit;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
@@ -37,7 +33,7 @@ namespace ResoniteLNLTweaks
         public override string Link => BuildInfo.Link;
 
         [AutoRegisterConfigKey]
-        public static readonly ModConfigurationKey<int> WINDOWSIZE = new("windowSize", "Window Size: The maximum data size of each LNL packet. Default is 64.", () => 64);
+        public static readonly ModConfigurationKey<int> WINDOWSIZE = new("windowSize", "Window Size: The maximum data size of each LNL packet. Default is 64.", () => 128);
 
         [AutoRegisterConfigKey]
         public static readonly ModConfigurationKey<bool> NATIVESOCKETS = new("nativeSockets", "Native Sockets: Enable Native Sockets (WARNING: Experimental).", () => false);
@@ -49,7 +45,11 @@ namespace ResoniteLNLTweaks
 
         public static Type BaseChannelType = AccessTools.TypeByName("LiteNetLib.BaseChannel");
 
-        //public static ConstructorInfo BaseChannelCI = AccessTools.Constructor(BaseChannelType, new Type[] { typeof(NetPeer) });
+        public static Type ReliableChannelType = AccessTools.TypeByName("LiteNetLib.ReliableChannel");
+
+        public static ConstructorInfo BaseChannelCI = AccessTools.Constructor(BaseChannelType, new Type[] { typeof(NetPeer) });
+
+        public static ConstructorInfo ReliableChannelCI = AccessTools.Constructor(ReliableChannelType, new Type[] { typeof(NetPeer), typeof(bool), typeof(byte) });
 
         public override void OnEngineInit()
         {
@@ -58,14 +58,14 @@ namespace ResoniteLNLTweaks
                 Harmony.DEBUG = true;
                 Config = GetConfiguration();
 
-                var constructorInfo = AccessTools.Constructor(BaseChannelType, new Type[] { typeof(NetPeer) });
-
                 Harmony harmony = new Harmony(BuildInfo.GUID);
 
-                var ctorMethodInfo = AccessTools.Method(typeof(BaseChannelPatch), "BaseChannelConstructor", new Type[] { typeof(Object), typeof(NetPeer) });
+                Msg($"BaseChannel: {BaseChannelCI.Name}" );
+                Msg($"ReliableChannel: {ReliableChannelCI}");
 
+                harmony.Patch(BaseChannelCI, transpiler: new HarmonyMethod(typeof(ResoniteLNLTweaks), nameof(BaseChannelTranspiler)));
+                harmony.Patch(ReliableChannelCI, transpiler: new HarmonyMethod(typeof(ResoniteLNLTweaks), nameof(ReliableChannelTranspiler)));
 
-                harmony.Patch(constructorInfo, postfix: new HarmonyMethod(ctorMethodInfo));
                 harmony.PatchAll();
 
             }
@@ -73,6 +73,46 @@ namespace ResoniteLNLTweaks
             {
                 Error(ex);
             }
+        }
+
+        static IEnumerable<CodeInstruction> ReliableChannelTranspiler(IEnumerable<CodeInstruction> instructions)
+        {
+            int windowSize = Config.GetValue(WINDOWSIZE);
+            var codes = new List<CodeInstruction>(instructions);
+            //int offset = 0;
+
+            for (int i = 0; i < codes.Count; i++)
+            {
+                CodeInstruction instr = codes[i];
+
+                if (instr.opcode == OpCodes.Ldc_I4_S) // Find and update first Ldc_I4_S to Ldc_I4
+                {
+                    codes[i] = new CodeInstruction(OpCodes.Ldc_I4, windowSize);
+                    Msg($"Patched ReliableChannel IL.");
+                    //offset = i + 1;
+                    break;
+                }
+            }
+            return codes;
+        }
+
+        static IEnumerable<CodeInstruction> BaseChannelTranspiler(IEnumerable<CodeInstruction> instructions)
+        {
+            int windowSize = Config.GetValue(WINDOWSIZE);
+            var codes = new List<CodeInstruction>(instructions);
+
+            for (int i = 0; i < codes.Count; i++)
+            {
+                CodeInstruction instr = codes[i];
+
+                if (instr.opcode == OpCodes.Ldc_I4_S) // Find and update first Ldc_I4_S to Ldc_I4
+                {
+                    codes[i] = new CodeInstruction(OpCodes.Ldc_I4, windowSize);
+                    Msg($"Patched BaseChannel IL.");
+                    break;
+                }
+            }
+            return codes;
         }
 
         [HarmonyPatch(typeof(NetManager))]
@@ -104,28 +144,8 @@ namespace ResoniteLNLTweaks
                         ___UseNativeSockets = false;
                     }
                 }
-
                 return true;
             }
         }
-
-
-        [HarmonyPatch("BaseChannel")]
-        public static class BaseChannelPatch
-        {
-
-/*            [HarmonyPostfix]
-            [HarmonyPatch(MethodType.Constructor)]
-            public static void BaseChannelConstructor(Object __instance, NetPeer peer)
-            {
-                Msg($"THIS IS THE CONSTRUCTOR 1!");
-            }
-*/
-            public static void BaseChannelConstructor(Object __instance, NetPeer peer)
-            {
-                Msg($"THIS IS THE CONSTRUCTOR 2!");
-            }
-        }
-
     }
 }
