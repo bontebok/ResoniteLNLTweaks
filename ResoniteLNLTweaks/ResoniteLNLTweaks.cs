@@ -55,14 +55,11 @@ namespace ResoniteLNLTweaks
         {
             try
             {
-                Harmony.DEBUG = true;
+                //Harmony.DEBUG = true;
                 Config = GetConfiguration();
                 bool disablemod = Config.GetValue(DISABLEMOD);
 
                 Harmony harmony = new Harmony(BuildInfo.GUID);
-
-                Msg($"BaseChannel: {BaseChannelCI.Name}");
-                Msg($"ReliableChannel: {ReliableChannelCI}");
 
                 if (!disablemod)
                 {
