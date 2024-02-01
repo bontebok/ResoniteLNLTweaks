@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{BE5FBCCB-AF57-486E-9D0D-1E2CCB441E11}") = "ResoniteLNLTweaks", "ResoniteLNLTweaks\ResoniteLNLTweaks.csproj", "{7B05AF04-3BF6-4AB4-8185-B6438B8DCC72}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{7B05AF04-3BF6-4AB4-8185-B6438B8DCC72}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7B05AF04-3BF6-4AB4-8185-B6438B8DCC72}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7B05AF04-3BF6-4AB4-8185-B6438B8DCC72}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7B05AF04-3BF6-4AB4-8185-B6438B8DCC72}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
