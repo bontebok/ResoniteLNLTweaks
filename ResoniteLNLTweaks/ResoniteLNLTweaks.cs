@@ -47,7 +47,7 @@ namespace ResoniteLNLTweaks
 
         public static ModConfiguration Config;
 
-        //public static Type BaseChannelType = AccessTools.TypeByName("LiteNetLib.BaseChannel");
+        public static Type BaseChannelType = AccessTools.TypeByName("LiteNetLib.BaseChannel");
 
         //public static ConstructorInfo BaseChannelCI = AccessTools.Constructor(BaseChannelType, new Type[] { typeof(NetPeer) });
 
@@ -57,8 +57,17 @@ namespace ResoniteLNLTweaks
             {
                 Harmony.DEBUG = true;
                 Config = GetConfiguration();
+
+                var constructorInfo = AccessTools.Constructor(BaseChannelType, new Type[] { typeof(NetPeer) });
+
                 Harmony harmony = new Harmony(BuildInfo.GUID);
+
+                var ctorMethodInfo = AccessTools.Method(typeof(BaseChannelPatch), "BaseChannelConstructor", new Type[] { typeof(Object), typeof(NetPeer) });
+
+
+                harmony.Patch(constructorInfo, postfix: new HarmonyMethod(ctorMethodInfo));
                 harmony.PatchAll();
+
             }
             catch (Exception ex)
             {
@@ -102,7 +111,7 @@ namespace ResoniteLNLTweaks
 
 
         [HarmonyPatch("BaseChannel")]
-        public class BaseChannelPatch
+        public static class BaseChannelPatch
         {
 
 /*            [HarmonyPostfix]
@@ -112,9 +121,7 @@ namespace ResoniteLNLTweaks
                 Msg($"THIS IS THE CONSTRUCTOR 1!");
             }
 */
-            [HarmonyPostfix]
-            [HarmonyPatch(new Type[] { typeof(NetPeer) })]
-            public static void BaseChannelConstructorT(Object __instance, NetPeer peer)
+            public static void BaseChannelConstructor(Object __instance, NetPeer peer)
             {
                 Msg($"THIS IS THE CONSTRUCTOR 2!");
             }
