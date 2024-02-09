@@ -20,7 +20,7 @@ namespace ResoniteLNLTweaks
     {
         public const string Name = "ResoniteLNLTweaks";
         public const string Author = "Rucio";
-        public const string Version = "0.0.1";
+        public const string Version = "0.0.2";
         public const string Link = "https://github.com/bontebok/ResoniteLNLTweaks";
         public const string GUID = "com.ruciomods.ResoniteLNLTweaks";
     }
@@ -33,7 +33,7 @@ namespace ResoniteLNLTweaks
         public override string Link => BuildInfo.Link;
 
         [AutoRegisterConfigKey]
-        public static readonly ModConfigurationKey<int> WINDOWSIZE = new("windowSize", "Window Size: The maximum data size of each LNL packet. Default is 64.", () => 128);
+        public static readonly ModConfigurationKey<int> WINDOWSIZE = new("windowSize", "Window Size: The maximum data size of each LNL packet. Default is 64.", () => 64);
 
         [AutoRegisterConfigKey]
         public static readonly ModConfigurationKey<bool> NATIVESOCKETS = new("nativeSockets", "Native Sockets: Enable Native Sockets (WARNING: Experimental).", () => false);
@@ -51,6 +51,27 @@ namespace ResoniteLNLTweaks
 
         public static ConstructorInfo ReliableChannelCI = AccessTools.Constructor(ReliableChannelType, new Type[] { typeof(NetPeer), typeof(bool), typeof(byte) });
 
+        private static bool _windowSizePatched = false;
+
+        private static Harmony _harmony;
+
+        private static void RepatchLNL()
+        {
+            bool disablemod = Config.GetValue(DISABLEMOD);
+            if (_windowSizePatched) // Patched, let's unpatch
+            {
+                _harmony.Unpatch(BaseChannelCI, HarmonyPatchType.All);
+                _harmony.Unpatch(ReliableChannelCI, HarmonyPatchType.All);
+                _windowSizePatched = false;
+            }
+            if (!disablemod) // Apply transpiler patch for DefaultWindowSize
+            {
+                _harmony.Patch(BaseChannelCI, transpiler: new HarmonyMethod(typeof(ResoniteLNLTweaks), nameof(BaseChannelTranspiler)));
+                _harmony.Patch(ReliableChannelCI, transpiler: new HarmonyMethod(typeof(ResoniteLNLTweaks), nameof(ReliableChannelTranspiler)));
+                _windowSizePatched = true;
+            }
+        }
+
         public override void OnEngineInit()
         {
             try
@@ -59,16 +80,12 @@ namespace ResoniteLNLTweaks
                 Config = GetConfiguration();
                 bool disablemod = Config.GetValue(DISABLEMOD);
 
-                Harmony harmony = new Harmony(BuildInfo.GUID);
+                _harmony = new Harmony(BuildInfo.GUID);
 
-                if (!disablemod)
-                {
-                    harmony.Patch(BaseChannelCI, transpiler: new HarmonyMethod(typeof(ResoniteLNLTweaks), nameof(BaseChannelTranspiler)));
-                    harmony.Patch(ReliableChannelCI, transpiler: new HarmonyMethod(typeof(ResoniteLNLTweaks), nameof(ReliableChannelTranspiler)));
-                }
+                RepatchLNL();
+                _harmony.PatchAll();
 
-                harmony.PatchAll();
-
+                Config.OnThisConfigurationChanged += OnConfigChange; //Subscribe to when any key in this mod has changed
             }
             catch (Exception ex)
             {
@@ -76,21 +93,35 @@ namespace ResoniteLNLTweaks
             }
         }
 
+        static void OnConfigChange(ConfigurationChangedEvent configurationChangedEvent)
+        {
+            switch (configurationChangedEvent.Key.Name)
+            {
+                case "disableMod":
+                    RepatchLNL();
+                    break;
+                case "windowSize":
+                    if (Config.GetValue(WINDOWSIZE) % 64 == 0) // Don't apply unless the value is a factor of 64
+                    {
+                        RepatchLNL();
+                    }
+                    break;
+            }
+        }
+
         static IEnumerable<CodeInstruction> ReliableChannelTranspiler(IEnumerable<CodeInstruction> instructions)
         {
             int windowSize = Config.GetValue(WINDOWSIZE);
             var codes = new List<CodeInstruction>(instructions);
-            //int offset = 0;
 
             for (int i = 0; i < codes.Count; i++)
             {
                 CodeInstruction instr = codes[i];
 
-                if (instr.opcode == OpCodes.Ldc_I4_S) // Find and update first Ldc_I4_S to Ldc_I4
+                if (instr.opcode == OpCodes.Ldc_I4_S) // Update first Ldc_I4_S
                 {
                     codes[i] = new CodeInstruction(OpCodes.Ldc_I4, windowSize);
                     Msg($"Patched ReliableChannel IL.");
-                    //offset = i + 1;
                     break;
                 }
             }
@@ -106,7 +137,7 @@ namespace ResoniteLNLTweaks
             {
                 CodeInstruction instr = codes[i];
 
-                if (instr.opcode == OpCodes.Ldc_I4_S) // Find and update first Ldc_I4_S to Ldc_I4
+                if (instr.opcode == OpCodes.Ldc_I4_S) // Update first Ldc_I4_S
                 {
                     codes[i] = new CodeInstruction(OpCodes.Ldc_I4, windowSize);
                     Msg($"Patched BaseChannel IL.");
