@@ -20,7 +20,7 @@ namespace ResoniteLNLTweaks
     {
         public const string Name = "ResoniteLNLTweaks";
         public const string Author = "Rucio";
-        public const string Version = "0.0.2";
+        public const string Version = "0.1.0";
         public const string Link = "https://github.com/bontebok/ResoniteLNLTweaks";
         public const string GUID = "com.ruciomods.ResoniteLNLTweaks";
     }
@@ -62,6 +62,7 @@ namespace ResoniteLNLTweaks
             {
                 _harmony.Unpatch(BaseChannelCI, HarmonyPatchType.All);
                 _harmony.Unpatch(ReliableChannelCI, HarmonyPatchType.All);
+                Msg($"Unpatched BaseChannel and ReliableChannel.");
                 _windowSizePatched = false;
             }
             if (!disablemod) // Apply transpiler patch for DefaultWindowSize
@@ -121,7 +122,7 @@ namespace ResoniteLNLTweaks
                 if (instr.opcode == OpCodes.Ldc_I4_S) // Update first Ldc_I4_S
                 {
                     codes[i] = new CodeInstruction(OpCodes.Ldc_I4, windowSize);
-                    Msg($"Patched ReliableChannel IL.");
+                    Msg($"Patched ReliableChannel IL: DefaultWindowSize: {windowSize}");
                     break;
                 }
             }
@@ -140,7 +141,7 @@ namespace ResoniteLNLTweaks
                 if (instr.opcode == OpCodes.Ldc_I4_S) // Update first Ldc_I4_S
                 {
                     codes[i] = new CodeInstruction(OpCodes.Ldc_I4, windowSize);
-                    Msg($"Patched BaseChannel IL.");
+                    Msg($"Patched BaseChannel IL: DefaultWindowSize: {windowSize}");
                     break;
                 }
             }
