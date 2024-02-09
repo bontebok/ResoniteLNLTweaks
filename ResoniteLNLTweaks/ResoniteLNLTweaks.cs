@@ -62,8 +62,8 @@ namespace ResoniteLNLTweaks
             {
                 _harmony.Unpatch(BaseChannelCI, HarmonyPatchType.All);
                 _harmony.Unpatch(ReliableChannelCI, HarmonyPatchType.All);
-                Msg($"Unpatched BaseChannel and ReliableChannel.");
                 _windowSizePatched = false;
+                Msg($"Unpatched BaseChannel and ReliableChannel.");
             }
             if (!disablemod) // Apply transpiler patch for DefaultWindowSize
             {
@@ -122,7 +122,7 @@ namespace ResoniteLNLTweaks
                 if (instr.opcode == OpCodes.Ldc_I4_S) // Update first Ldc_I4_S
                 {
                     codes[i] = new CodeInstruction(OpCodes.Ldc_I4, windowSize);
-                    Msg($"Patched ReliableChannel IL: DefaultWindowSize: {windowSize}");
+                    Msg($"Patched ReliableChannel: DefaultWindowSize: {windowSize}");
                     break;
                 }
             }
@@ -141,7 +141,7 @@ namespace ResoniteLNLTweaks
                 if (instr.opcode == OpCodes.Ldc_I4_S) // Update first Ldc_I4_S
                 {
                     codes[i] = new CodeInstruction(OpCodes.Ldc_I4, windowSize);
-                    Msg($"Patched BaseChannel IL: DefaultWindowSize: {windowSize}");
+                    Msg($"Patched BaseChannel: DefaultWindowSize: {windowSize}");
                     break;
                 }
             }
