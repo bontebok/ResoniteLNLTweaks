@@ -1,1 +1,1 @@
-This is a testing Mod to allow tweaking settings related to LiteNetLib library in Resonite.
+This is an experimental ResoniteModLoader Mod to allow for the tweaking settings related to LiteNetLib library in Resonite. You probably don't need this unless you know what you are doing, or you are helping Rucio with testing :)
